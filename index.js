@@ -1,34 +1,26 @@
 var http = require('http');
+var Layer = require('./lib/layer');
 
 module.exports = express;
 
-// http://stackoverflow.com/questions/1007981/how-to-get-function-parameter-names-values-dynamically-from-javascript
-var STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
-var ARGUMENT_NAMES = /([^\s,]+)/g;
-function getParamNames(func) {
-  var fnStr = func.toString().replace(STRIP_COMMENTS, '')
-    var result = fnStr.slice(fnStr.indexOf('(')+1, fnStr.indexOf(')')).match(ARGUMENT_NAMES)
-    if(result === null)
-      result = []
-        return result
-}
-
 function express() {
-  var stack = [];
   var app = function(req, resp, next) {
     var step = 0;
     function _next(err) {
-      if(stack.length > step) {
-        var handler = stack[step++];
-        var handlerargs = getParamNames(handler);
-        var iserrorhandler = handlerargs.length > 1 && /err/.test(handlerargs[0]);
-        if(err && iserrorhandler) {
-          handler(err, req, resp, _next);
-        }
-        else if(!err && !iserrorhandler) {
-          try {
-            handler(req, resp, _next);
-          }catch(err) {
+      if(app.stack.length > step) {
+        var layer = app.stack[step++];
+        if (layer.match(req.url)) {
+          if(err && layer.iserrorhandle) {
+            layer.handle(err, req, resp, _next);
+          }
+          else if(!err && !layer.iserrorhandle) {
+            try {
+              layer.handle(req, resp, _next);
+            }catch(err) {
+              _next(err);
+            }
+          }
+          else {
             _next(err);
           }
         }
@@ -38,7 +30,7 @@ function express() {
       }
       else {
         // when reach here, means non of our handlers want to handle this request.
-        if (!next) {
+        if (!next) { // when next not null, means we are currently running inside other express container, so we need pass it on.
           if (!err) {
             resp.statusCode = 404;
             resp.end();
@@ -55,12 +47,18 @@ function express() {
     }
     _next();
   }
+  app.stack = [];
   app.listen = function(port, done) {
     var server = http.createServer(app);
     return server.listen(port, done);
   };
-  app.use = function(handler) {
-    stack.push(handler);
+  app.use = function(path, handle) {
+    if (typeof(arguments[0]) === 'function') {
+      handle = path;
+      path = "";
+    }
+    var layer = new Layer(path, handle);
+    app.stack.push(layer);
   };
   return app;
 }
