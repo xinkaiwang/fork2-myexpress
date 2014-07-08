@@ -138,15 +138,15 @@ describe("error handling", function() {
         });
     it('skip normal handler when error happend', function(done) {
         var m1 = function(req,res,next) {
-          next(new Error("boom!"));
+        next(new Error("boom!"));
         }
 
         var e1 = function(err,req,res,next) {
-          res.end("e1");
+        res.end("e1");
         }
 
         var m2 = function(req,res,next) {
-          // timeout
+        // timeout
         }
         app.use(m1);
         app.use(m2); // should skip this
@@ -159,3 +159,43 @@ describe("error handling", function() {
         });
 });
 
+describe("App Embeding As Middleware", function() {
+    var app;
+    beforeEach(function() {
+      app = new myexpress();
+      });
+    it("pass unhandled request to parent", function(done) {
+      subApp = new myexpress();
+
+      function m2(req,res,next) {
+      res.end("m2");
+      }
+
+      app.use(subApp);
+      app.use(m2);
+
+      request(app)
+      .get('/user')
+      .expect('m2')
+      .end(done);
+      });
+    it("pass unhandled error to parent", function(done) {
+      subApp = new myexpress();
+
+      function m1(req,res,next) {
+        next("m1 error");
+      }
+
+      function e1(err, req, res, next) {
+        res.end(err);
+      }
+      app.use(subApp);
+      subApp.use(m1);
+      app.use(e1);
+
+      request(app)
+      .get('/user')
+      .expect('m1 error')
+      .end(done);
+      });
+});

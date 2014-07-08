@@ -15,40 +15,45 @@ function getParamNames(func) {
 
 function express() {
   var stack = [];
-  var app = function(req, resp) {
+  var app = function(req, resp, next) {
     var step = 0;
-    function next(err) {
+    function _next(err) {
       if(stack.length > step) {
         var handler = stack[step++];
         var handlerargs = getParamNames(handler);
         var iserrorhandler = handlerargs.length > 1 && /err/.test(handlerargs[0]);
         if(err && iserrorhandler) {
-          handler(err, req, resp, next);
+          handler(err, req, resp, _next);
         }
         else if(!err && !iserrorhandler) {
           try {
-            handler(req, resp, next);
+            handler(req, resp, _next);
           }catch(err) {
-            next(err);
+            _next(err);
+          }
+        }
+        else {
+          _next(err);
+        }
+      }
+      else {
+        // when reach here, means non of our handlers want to handle this request.
+        if (!next) {
+          if (!err) {
+            resp.statusCode = 404;
+            resp.end();
+          }
+          else {
+            resp.statusCode = 500;
+            resp.end();
           }
         }
         else {
           next(err);
         }
       }
-      else {
-        // when reach here, means non of our handlers want to handle this request.
-        if (!err) {
-          resp.statusCode = 404;
-          resp.end();
-        }
-        else {
-          resp.statusCode = 500;
-          resp.end();
-        }
-      }
     }
-    next();
+    _next();
   }
   app.listen = function(port, done) {
     var server = http.createServer(app);
