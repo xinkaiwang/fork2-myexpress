@@ -46,7 +46,7 @@ function express() {
       }
     }
     _next();
-  }
+  };
   app.stack = [];
   app.listen = function(port, done) {
     var server = http.createServer(app);
