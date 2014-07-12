@@ -4,19 +4,31 @@ var Layer = require('./lib/layer');
 module.exports = express;
 
 function express() {
-  var app = function(req, resp, next) {
+  var app = function(req, res, next) {
+    app.handle(req, res, next);
+  };
+  app.handle = function(req, resp, next) {
     var step = 0;
+    var originalurl = req.url; // we want to keep a copy of this becuase we are going to modify it.
     function _next(err) {
       if(app.stack.length > step) {
         var layer = app.stack[step++];
         var matched;
-        if (matched = layer.match(req.url)) {
+        if (matched = layer.match(originalurl)) {
           req.params = matched.params;
           if(err && layer.iserrorhandle) {
             layer.handle(err, req, resp, _next);
           }
           else if(!err && !layer.iserrorhandle) {
             try {
+              if (typeof layer.handle.handle === 'function') {
+                var subpath = originalurl.substring(matched.path.length, originalurl.length);
+                if (subpath.length === 0) subpath = '/';
+                req.url = subpath;
+              }
+              else {
+                req.url = originalurl;
+              }
               layer.handle(req, resp, _next);
             }catch(err) {
               _next(err);
