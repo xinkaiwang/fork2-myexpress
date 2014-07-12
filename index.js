@@ -9,7 +9,9 @@ function express() {
     function _next(err) {
       if(app.stack.length > step) {
         var layer = app.stack[step++];
-        if (layer.match(req.url)) {
+        var matched;
+        if (matched = layer.match(req.url)) {
+          req.params = matched.params;
           if(err && layer.iserrorhandle) {
             layer.handle(err, req, resp, _next);
           }

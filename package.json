@@ -9,8 +9,9 @@
   "author": "xinkai wang",
   "license": "ISC",
   "devDependencies": {
-    "mocha": "^1.18.2",
     "chai": "^1.9.1",
+    "mocha": "^1.18.2",
+    "path-to-regexp": "^0.2.3",
     "supertest": "^0.10.0"
   }
 }
