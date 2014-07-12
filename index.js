@@ -1,5 +1,8 @@
 var http = require('http');
 var Layer = require('./lib/layer');
+var makeRoute = require('./lib/route');
+var methods = require('methods');
+var _ = require('underscore');
 
 module.exports = express;
 
@@ -74,6 +77,24 @@ function express() {
     var layer = new Layer(path, handle);
     app.stack.push(layer);
   };
+  //app.get = function(path, handle) {
+  //  if (typeof(arguments[0]) === 'function') {
+  //    handle = path;
+  //    path = "";
+  //  }
+  //  var layer = new Layer(path, makeRoute('GET', handle), true);
+  //  app.stack.push(layer);
+  //};
+  _.each(methods, function(verb) {
+    app[verb] = function(path, handle) {
+      if (typeof(arguments[0]) === 'function') {
+        handle = path;
+        path = "";
+      }
+      var layer = new Layer(path, makeRoute(verb, handle), true);
+      app.stack.push(layer);
+    };
+  });
   return app;
 }
 
