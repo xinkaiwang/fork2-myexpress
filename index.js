@@ -1,6 +1,7 @@
 var http = require('http');
 var Layer = require('./lib/layer');
 var makeRoute = require('./lib/route');
+var injector = require('./lib/injector');
 var _ = require('underscore');
 
 module.exports = express;
@@ -102,6 +103,15 @@ function express() {
     app.use(r);
     return r;
   };
+
+  // express-di
+  app._factories = {};
+  app.factory = function(name, fn) {
+    app._factories[name] = fn;
+  };
+  app.inject= function(fn) {
+    return injector(fn, app);
+  }
   return app;
 }
 
