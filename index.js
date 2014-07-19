@@ -8,9 +8,12 @@ module.exports = express;
 
 function express() {
   var app = function(req, res, next) {
+    app.monkey_patch(req, res);
     app.handle(req, res, next);
   };
   app.handle = function(req, resp, next) {
+    var parentApp = req.app;
+    req.app = app;
     var step = 0;
     var originalurl = req.url; // we want to keep a copy of this becuase we are going to modify it.
     function _next(err) {
@@ -58,6 +61,7 @@ function express() {
           }
         }
         else {
+          req.app = parentApp; // restore req.app to parent app before we quit
           next(err);
         }
       }
@@ -111,6 +115,19 @@ function express() {
   };
   app.inject= function(fn) {
     return injector(fn, app);
+  }
+
+  var prototypeForReq;
+  var protptypeForRes;
+  app.monkey_patch = function(req, res) {
+    req.res = res;
+    res.req = req;
+    if(!req.isExpress) {
+      req.__proto__ = require('./lib/request');
+    }
+    if(!res.isExpress) {
+      res.__proto__ = require('./lib/response');
+    }
   }
   return app;
 }
