@@ -56,8 +56,13 @@ function express() {
             resp.end();
           }
           else {
-            resp.statusCode = 500;
-            resp.end();
+            if (err.statusCode && err.message) {
+              resp.statusCode = err.statusCode;
+              resp.end(err.message);
+            } else {
+              resp.statusCode = 500;
+              resp.end();
+            }
           }
         }
         else {

@@ -15,8 +15,10 @@
     "supertest": "^0.10.0"
   },
   "dependencies": {
+    "accepts": "^1.0.1",
     "express-di": "^4.0.0",
     "methods": "^0.1.0",
+    "mime": "^1.2.11",
     "underscore": "^1.6.0"
   }
 }
